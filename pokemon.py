@@ -96,8 +96,10 @@ class Trainer:
     
     def switch_pokemon(self,new_pokemon):
         if new_pokemon < len(self.pokemons) :
-            self.current_pokemon = new_pokemon 
-            print(f"{self} switched current pokemon to: {self.pokemons[self.current_pokemon].name}.")
+            if not self.pokemons[new_pokemon].is_knocked_out:
+                self.current_pokemon = new_pokemon 
+                print(f"{self} switched current pokemon to: {self.pokemons[self.current_pokemon].name}.")
+            else: print("Unable to switch to pokemon which is knocked out!")
         else:
             print("Unable to switch pokemon. Incorrect pokemon number")
     
