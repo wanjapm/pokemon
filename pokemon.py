@@ -1,7 +1,8 @@
+import math
 class Pokemon_type:
-    def __init__(self, name, weight):
+    def __init__(self, name, weights):
         self.name = name
-        self.weight = weight
+        self.weights = weights # a dict showing how the pokemon interacts with other pok types
 
     def __repr__(self):
         return self.name
@@ -9,11 +10,12 @@ class Pokemon_type:
 class Pokemon:
     def __init__(self, name, level, p_type, max_health, health, is_knocked_out):
         self.name = name
-        self.level = level
+        self.level = 1
         self.p_type = p_type
         self.max_health = max_health
         self.health = health
         self.is_knocked_out = is_knocked_out
+        self.experience = 0 # 3 experience points move to next level
         
     def __repr__(self):
         return self.name
@@ -27,7 +29,7 @@ class Pokemon:
             self.health = 0 
             self.knock_out()
 
-        self.level = self.health
+        #self.level = self.health
         
 
     def gain_health (self, gain):
@@ -35,21 +37,21 @@ class Pokemon:
         if h > self.max_health : self.health = self.max_health
         else: self.health = h
 
-        self.level = self.health
+        #self.level = self.health
         if self.is_knocked_out: self.heal()
         self.print_health()
         
     def print_health(self):
         if self.health == self.max_health:
-            print (f"{self.name} has maximum health!")
+            print (f"{self.name} is in level {self.level} and has maximum health!")
         elif self.is_knocked_out:
-            print(f"{self.name} has been knocked out!")
+            print(f"{self.name}  is in level {self.level} and has been knocked out!")
         else:
-            print (f"{self.name} has {self.health} health.")
+            print (f"{self.name}  is in level {self.level} and has {self.health} health.")
     
     def knock_out(self):
         self.is_knocked_out = True
-        print(f"{self.name} has been knocked out!")
+        print(f"{self.name} has been knocked out! Level:{self.level}")
     
     def heal(self):
         self.is_knocked_out = False
@@ -59,14 +61,34 @@ class Pokemon:
         loss = 0 
         effective = "Effective attack!"
         if not self.is_knocked_out:
-            if self.p_type.weight <= other_pokemon.p_type.weight:
-               loss = int(self.level/2)
+            if self.p_type.weights.get(str(other_pokemon.p_type),0) == 0:
+                # means they are the same type - nothing should happen
+                effective = "Ineffective attack!"
+                print(f"{other_pokemon.name} has been attacked by {self.name} with {loss} force! {effective}")
+                return
+
+            elif self.p_type.weights.get(str(other_pokemon.p_type)) < 2:
+            # self.p_type.weight.get(self.name) <= other_pokemon.p_type.weight:
+               loss = int(self.health/2)
                effective = "Ineffective attack!"
+               self.experience += 0.5
             else:
-                loss = self.level*2
+                loss = self.health*2
+                self.experience += 2
+
             print(f"{other_pokemon.name} has been attacked by {self.name} with {loss} force! {effective}")
             other_pokemon.lose_health(loss)
+            self.level_up()
         else: print(f"{other_pokemon.name} cannot attack while it is knocked out!")
+        
+
+    def level_up(self):
+        if math.ceil(self.experience/3) > self.level:
+            self.level = math.ceil(self.experience/3) 
+            print(f"{self} has moved to level {self.level}!")
+        if self.level > 5 :
+            self.type = Pokemon_type("Ice",{"Grass":2,"Fire":0.5,"Water":0.5})
+            print(f"{self} has evolved to type Ice!")
 
 class Trainer:
     def __init__(self, name, pokemon_list, potions, current_pokemon):
@@ -99,7 +121,7 @@ class Trainer:
             if not self.pokemons[new_pokemon].is_knocked_out:
                 self.current_pokemon = new_pokemon 
                 print(f"{self} switched current pokemon to: {self.pokemons[self.current_pokemon].name}.")
-            else: print("Unable to switch to pokemon which is knocked out!")
+            else: print(f"Unable to switch {self}:{self.pokemons[self.current_pokemon].name} to {self.pokemons[new_pokemon].name} pokemon which is knocked out!")
         else:
             print("Unable to switch pokemon. Incorrect pokemon number")
     
@@ -110,10 +132,14 @@ class Trainer:
 
 # Test area
 
+# Pokemon dicts to show how they interact with each other
+
+
 # creating Pokemon_types
-grass  = Pokemon_type("Grass",20)
-fire  = Pokemon_type("Fire",40)
-water  = Pokemon_type("Water",80)
+grass  = Pokemon_type("Grass", {"Water":2,"Fire":0.5,"Ice":0})
+fire  = Pokemon_type("Fire", {"Water":0.5,"Grass":2,"Ice":2})
+water  = Pokemon_type("Water", {"Grass":0.5,"Fire":2,"Ice":0})
+ice = Pokemon_type("Ice", {"Grass":2,"Fire":0.5,"Water":0.5})
 
 # creating Pokemons
 # (self, name, level, p_type, max_health, health, is_knocked_out)
@@ -131,21 +157,21 @@ trainer_john = Trainer("John",[grass_pok,grass_pok,water_pok,fire_pok], 5,1)
 trainer_jane.attack(trainer_john)
 trainer_alex.attack(trainer_jane)
 print("")
-trainer_jane.print_health()
 trainer_john.print_health()
+trainer_jane.print_health()
 
+print("")
 trainer_john.switch_pokemon(2)
 trainer_jane.drink_potion()
+print("")
 trainer_john.attack(trainer_jane)
+trainer_alex.attack(trainer_john)
+trainer_john.switch_pokemon(3)
+trainer_alex.attack(trainer_jane)
+trainer_john.attack(trainer_alex)
 
 print("")
 trainer_jane.print_health()
 trainer_john.print_health()
+trainer_alex.print_health()
 
-print("")
-trainer_jane.drink_potion()
-trainer_jane.attack(trainer_john)
-
-print("")
-trainer_jane.print_health()
-trainer_john.print_health()
